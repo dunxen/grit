@@ -23,6 +23,11 @@ fn main() {
                                 panic!("Could not create {:?}: {:?}", dir_path, error)
                             }
                         }
+
+                        println!(
+                            "Initialized empty git repository in {}",
+                            git_path.to_str().unwrap_or("directory")
+                        );
                     }
                     Err(error) => panic!("Error forming path: {:?}", error),
                 }
@@ -30,6 +35,4 @@ fn main() {
             _ => unimplemented!(),
         }
     }
-
-    println!("Hello, world!");
 }
