@@ -26,7 +26,8 @@ fn init(args: &mut std::iter::Skip<env::Args>) {
                 let res = fs::create_dir_all(&dir_path);
 
                 if let Err(error) = res {
-                    panic!("Could not create {:?}: {:?}", dir_path, error)
+                    eprintln!("Could not create {:?}: {:?}", dir_path, error);
+                    std::process::exit(1)
                 }
             }
 
