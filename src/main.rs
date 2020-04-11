@@ -63,7 +63,5 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let mut tree = Tree::new(entries);
-    db.store(&mut tree).unwrap();
-
-    Ok(())
+    db.store(&mut tree)
 }
