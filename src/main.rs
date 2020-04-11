@@ -52,13 +52,8 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
 
     for entry in ws.list_files()? {
         let path = entry?.path();
-
-        if path.file_name().unwrap().to_str().unwrap() == ".git" {
-            continue;
-        }
         let data = String::from_utf8(Workspace::read_file(&path)?)?;
         let mut blob = Blob::new(&data);
-
         db.store(&mut blob)?
     }
 
