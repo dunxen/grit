@@ -3,7 +3,7 @@ use std::{env, fs, path::PathBuf};
 mod database;
 mod workspace;
 
-use database::{Blob, Database};
+use database::{Blob, Database, Entry, Object, Tree};
 use workspace::Workspace;
 
 fn main() {
@@ -50,12 +50,20 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
     let ws = Workspace::new(&root_path);
     let db = Database::new(&db_path);
 
-    for entry in ws.list_files()? {
-        let path = entry?.path();
-        let data = String::from_utf8(Workspace::read_file(&path)?)?;
-        let mut blob = Blob::new(&data);
-        db.store(&mut blob)?
-    }
+    let entries: Vec<Entry> = ws
+        .list_files()?
+        .map(|dir_entry| {
+            let path = dir_entry.unwrap().path();
+            let data = String::from_utf8(Workspace::read_file(&path).unwrap()).unwrap();
+            let mut blob = Blob::new(&data);
+            db.store(&mut blob).unwrap();
+
+            Entry::new(path.to_str().unwrap(), &blob.get_oid())
+        })
+        .collect();
+
+    let mut tree = Tree::new(entries);
+    db.store(&mut tree).unwrap();
 
     Ok(())
 }
