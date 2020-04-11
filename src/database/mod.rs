@@ -51,7 +51,8 @@ impl Database {
         let object_path = &dirname.join(&oid[2..]);
         let temp_path = PathBuf::from(&dirname).join(Database::generate_temp_name());
 
-        let compressed = deflate::deflate_bytes_conf(content, deflate::CompressionOptions::fast());
+        let compressed =
+            deflate::deflate_bytes_zlib_conf(content, deflate::CompressionOptions::fast());
         if let Err(error) = fs::write(&temp_path, &compressed) {
             match error.kind() {
                 std::io::ErrorKind::NotFound => {
