@@ -58,7 +58,7 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
             let mut blob = Blob::new(&data);
             db.store(&mut blob).unwrap();
 
-            Entry::new(path.to_str().unwrap(), &blob.get_oid())
+            Entry::new(path.file_name().unwrap().to_str().unwrap(), &blob.get_oid())
         })
         .collect();
 

@@ -19,7 +19,7 @@ pub trait Object {
     fn get_oid(&self) -> String;
     fn set_oid(&mut self, oid: String);
     fn get_type(&self) -> String;
-    fn bytes(&self) -> Vec<u8>;
+    fn bytes(&mut self) -> Vec<u8>;
 }
 
 pub struct Database {
@@ -99,10 +99,12 @@ impl Object for Blob {
         String::from("blob")
     }
 
-    fn bytes(&self) -> Vec<u8> {
+    fn bytes(&mut self) -> Vec<u8> {
         let mut content_buf = BytesMut::new();
         content_buf.put(self.get_type().as_bytes());
+        content_buf.put(&b" "[..]);
         content_buf.put(self.data.len().to_string().as_bytes());
+        content_buf.put(&b"\0"[..]);
         content_buf.put(self.data.as_bytes());
 
         content_buf.to_vec()
@@ -152,20 +154,23 @@ impl Object for Tree {
         String::from("tree")
     }
 
-    fn bytes(&self) -> Vec<u8> {
-        self.entries.to_vec().sort_by(|a, b| a.name.cmp(&b.name));
+    fn bytes(&mut self) -> Vec<u8> {
+        self.entries.sort_by_key(|x| x.name.clone());
         let mut buf = BytesMut::new();
 
         for entry in self.entries.iter() {
             buf.put(Tree::MODE.as_bytes());
             buf.put(&b" "[..]);
             buf.put(entry.name.as_bytes());
+            buf.put(&b"\0"[..]);
             buf.put(hex::decode_hex(&entry.oid).unwrap().as_slice());
         }
 
         let mut content_buf = BytesMut::new();
         content_buf.put(self.get_type().as_bytes());
+        content_buf.put(&b" "[..]);
         content_buf.put(buf.len().to_string().as_bytes());
+        content_buf.put(&b"\0"[..]);
         content_buf.put(buf);
 
         content_buf.to_vec()
