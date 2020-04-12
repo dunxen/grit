@@ -6,6 +6,8 @@ use deflate;
 use rand::seq::SliceRandom;
 use sha1::Sha1;
 
+pub mod author;
+pub use author::Author;
 mod hex;
 
 static TEMP_CHAR_SET: [char; 62] = [
@@ -166,6 +168,59 @@ impl Object for Tree {
             buf.put(&b"\0"[..]);
             buf.put(hex::decode_hex(&entry.oid).unwrap().as_slice());
         }
+
+        let mut content_buf = BytesMut::new();
+        content_buf.put(self.get_type().as_bytes());
+        content_buf.put(&b" "[..]);
+        content_buf.put(buf.len().to_string().as_bytes());
+        content_buf.put(&b"\0"[..]);
+        content_buf.put(buf);
+
+        content_buf.to_vec()
+    }
+}
+
+pub struct Commit {
+    oid: String,
+    tree_oid: String,
+    author: Author,
+    message: String,
+}
+
+impl Commit {
+    pub fn new(tree_oid: &str, author: Author, message: &str) -> Self {
+        Commit {
+            author,
+            oid: String::from(""),
+            tree_oid: tree_oid.to_owned(),
+            message: message.to_owned(),
+        }
+    }
+}
+
+impl Object for Commit {
+    fn get_oid(&self) -> String {
+        self.oid.to_owned()
+    }
+
+    fn set_oid(&mut self, oid: String) {
+        self.oid = oid
+    }
+
+    fn get_type(&self) -> String {
+        String::from("commit")
+    }
+
+    fn bytes(&mut self) -> Vec<u8> {
+        let mut buf = BytesMut::new();
+        buf.put(&b"tree "[..]);
+        buf.put(self.tree_oid.as_bytes());
+        buf.put(&b"\nauthor "[..]);
+        buf.put(self.author.bytes().as_slice());
+        buf.put(&b"\ncommitter "[..]);
+        buf.put(self.author.bytes().as_slice());
+        buf.put(&b"\n\n"[..]);
+        buf.put(self.message.as_bytes());
 
         let mut content_buf = BytesMut::new();
         content_buf.put(self.get_type().as_bytes());

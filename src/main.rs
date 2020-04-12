@@ -1,9 +1,13 @@
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    io::{self, Read},
+    path::PathBuf,
+};
 
 mod database;
 mod workspace;
 
-use database::{Blob, Database, Entry, Object, Tree};
+use database::{Author, Blob, Commit, Database, Entry, Object, Tree};
 use workspace::Workspace;
 
 fn main() {
@@ -63,5 +67,25 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let mut tree = Tree::new(entries);
-    db.store(&mut tree)
+    db.store(&mut tree)?;
+
+    // Storing commits
+    let name = env::var("GIT_AUTHOR_NAME")?;
+    let email = env::var("GIT_AUTHOR_EMAIL")?;
+    let author = Author::new(&name, &email);
+    let mut message = String::new();
+    io::stdin().read_to_string(&mut message)?;
+
+    let mut commit = Commit::new(&tree.get_oid(), author, &message);
+    db.store(&mut commit)?;
+
+    fs::write(git_path.join("HEAD"), commit.get_oid())?;
+
+    println!(
+        "[(root-commit) {}] {}",
+        commit.get_oid(),
+        message.lines().next().unwrap()
+    );
+
+    Ok(())
 }
