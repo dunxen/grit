@@ -7,7 +7,11 @@ use rand::seq::SliceRandom;
 use sha1::Sha1;
 
 pub mod author;
+pub mod refs;
+
 pub use author::Author;
+pub use refs::Refs;
+
 mod hex;
 
 static TEMP_CHAR_SET: [char; 62] = [
@@ -182,15 +186,17 @@ impl Object for Tree {
 
 pub struct Commit {
     oid: String,
+    parent: Option<String>,
     tree_oid: String,
     author: Author,
     message: String,
 }
 
 impl Commit {
-    pub fn new(tree_oid: &str, author: Author, message: &str) -> Self {
+    pub fn new(parent: &Option<String>, tree_oid: &str, author: Author, message: &str) -> Self {
         Commit {
             author,
+            parent: parent.to_owned(),
             oid: String::from(""),
             tree_oid: tree_oid.to_owned(),
             message: message.to_owned(),
@@ -215,6 +221,12 @@ impl Object for Commit {
         let mut buf = BytesMut::new();
         buf.put(&b"tree "[..]);
         buf.put(self.tree_oid.as_bytes());
+
+        if let Some(parent) = &self.parent {
+            buf.put(&b"\nparent "[..]);
+            buf.put(parent.as_bytes());
+        }
+
         buf.put(&b"\nauthor "[..]);
         buf.put(self.author.bytes().as_slice());
         buf.put(&b"\ncommitter "[..]);

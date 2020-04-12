@@ -7,7 +7,7 @@ use std::{
 mod database;
 mod workspace;
 
-use database::{Author, Blob, Commit, Database, Entry, Object, Tree};
+use database::{Author, Blob, Commit, Database, Entry, Object, Refs, Tree};
 use workspace::Workspace;
 
 fn main() {
@@ -53,6 +53,7 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
 
     let ws = Workspace::new(&root_path);
     let db = Database::new(&db_path);
+    let refs = Refs::new(&git_path);
 
     let entries: Vec<Entry> = ws
         .list_files()?
@@ -70,19 +71,26 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
     db.store(&mut tree)?;
 
     // Storing commits
+    let parent = refs.read_head();
     let name = env::var("GIT_AUTHOR_NAME")?;
     let email = env::var("GIT_AUTHOR_EMAIL")?;
     let author = Author::new(&name, &email);
     let mut message = String::new();
     io::stdin().read_to_string(&mut message)?;
 
-    let mut commit = Commit::new(&tree.get_oid(), author, &message);
+    let mut commit = Commit::new(&parent, &tree.get_oid(), author, &message);
     db.store(&mut commit)?;
+    refs.update_head(&commit.get_oid())?;
 
-    fs::write(git_path.join("HEAD"), commit.get_oid())?;
+    let is_root = if parent.is_none() {
+        "(root-commit) "
+    } else {
+        ""
+    };
 
     println!(
-        "[(root-commit) {}] {}",
+        "[{}{}] {}",
+        is_root,
         commit.get_oid(),
         message.lines().next().unwrap()
     );
