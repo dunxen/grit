@@ -13,6 +13,7 @@ pub use author::Author;
 pub use refs::Refs;
 
 mod hex;
+mod lockfile;
 
 static TEMP_CHAR_SET: [char; 62] = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
