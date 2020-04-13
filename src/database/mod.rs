@@ -56,6 +56,11 @@ impl Database {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let dirname = self.path.join(&oid[0..2]);
         let object_path = &dirname.join(&oid[2..]);
+
+        if object_path.exists() {
+            return Ok(());
+        }
+
         let temp_path = PathBuf::from(&dirname).join(Database::generate_temp_name());
 
         let compressed =
