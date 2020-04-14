@@ -128,14 +128,27 @@ impl Object for Blob {
 pub struct Entry {
     name: String,
     oid: String,
+    stat: u32,
 }
 
 impl Entry {
-    pub fn new(name: &str, oid: &str) -> Self {
+    const REGULAR_MODE: &'static str = "100644";
+    const EXECUTABLE_MODE: &'static str = "100755";
+
+    pub fn new(name: &str, oid: &str, stat: u32) -> Self {
         Entry {
+            stat,
             name: name.to_owned(),
             oid: oid.to_owned(),
         }
+    }
+
+    pub fn mode(&self) -> String {
+        if self.stat & 0o111 != 0 {
+            return Entry::EXECUTABLE_MODE.to_owned();
+        }
+
+        Entry::REGULAR_MODE.to_owned()
     }
 }
 
@@ -145,7 +158,6 @@ pub struct Tree {
 }
 
 impl Tree {
-    const MODE: &'static str = "100644";
     pub fn new(entries: Vec<Entry>) -> Self {
         Tree {
             entries,
@@ -172,7 +184,7 @@ impl Object for Tree {
         let mut buf = BytesMut::new();
 
         for entry in self.entries.iter() {
-            buf.put(Tree::MODE.as_bytes());
+            buf.put(entry.mode().as_bytes());
             buf.put(&b" "[..]);
             buf.put(entry.name.as_bytes());
             buf.put(&b"\0"[..]);

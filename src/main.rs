@@ -63,7 +63,12 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
             let mut blob = Blob::new(&data);
             db.store(&mut blob).unwrap();
 
-            Entry::new(path.file_name().unwrap().to_str().unwrap(), &blob.get_oid())
+            let stat = Workspace::stat_file(&path).unwrap();
+            Entry::new(
+                path.file_name().unwrap().to_str().unwrap(),
+                &blob.get_oid(),
+                stat,
+            )
         })
         .collect();
 

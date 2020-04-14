@@ -1,4 +1,4 @@
-use std;
+use std::os::unix::fs::PermissionsExt;
 
 pub struct Workspace {
     path: std::path::PathBuf,
@@ -36,5 +36,10 @@ impl Workspace {
 
     pub fn read_file(path: &std::path::PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         std::fs::read(path).map_err(|error| error.into())
+    }
+
+    pub fn stat_file(path: &std::path::PathBuf) -> Result<u32, Box<dyn std::error::Error>> {
+        let meta = std::fs::metadata(path)?;
+        Ok(meta.permissions().mode())
     }
 }
