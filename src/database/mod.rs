@@ -124,7 +124,7 @@ impl Object for Blob {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Entry {
     name: String,
     oid: String,

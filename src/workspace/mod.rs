@@ -1,10 +1,10 @@
-use std::os::unix::fs::PermissionsExt;
+use std::{os::unix::fs::PermissionsExt, path::Path};
+
+use walkdir::{DirEntry, WalkDir};
 
 pub struct Workspace {
     path: std::path::PathBuf,
 }
-
-type EntryPredicate = fn(&std::io::Result<std::fs::DirEntry>) -> bool;
 
 impl Workspace {
     const IGNORE: [&'static str; 1] = [".git"];
@@ -15,30 +15,23 @@ impl Workspace {
         }
     }
 
-    pub fn list_files(
-        &self,
-    ) -> Result<std::iter::Filter<std::fs::ReadDir, EntryPredicate>, Box<dyn std::error::Error>>
-    {
-        let ignore: EntryPredicate = |entry| {
-            if let Ok(entry) = entry {
-                return !Workspace::IGNORE
-                    .to_vec()
-                    .contains(&entry.file_name().to_str().unwrap());
-            }
-
-            false
-        };
-
-        std::fs::read_dir(&self.path)
-            .map(|x| x.filter(ignore))
-            .map_err(|error| error.into())
+    pub fn list_files(&self) -> impl Iterator<Item = DirEntry> {
+        WalkDir::new(&self.path)
+            .into_iter()
+            .filter_entry(|e| {
+                Workspace::IGNORE
+                    .iter()
+                    .any(|a| a != &e.file_name().to_str().unwrap())
+            })
+            .filter_map(|e| e.ok())
+            .filter(|e| e.metadata().unwrap().is_file())
     }
 
-    pub fn read_file(path: &std::path::PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    pub fn read_file(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         std::fs::read(path).map_err(|error| error.into())
     }
 
-    pub fn stat_file(path: &std::path::PathBuf) -> Result<u32, Box<dyn std::error::Error>> {
+    pub fn stat_file(path: &Path) -> Result<u32, Box<dyn std::error::Error>> {
         let meta = std::fs::metadata(path)?;
         Ok(meta.permissions().mode())
     }

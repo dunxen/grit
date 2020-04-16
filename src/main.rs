@@ -56,9 +56,9 @@ fn commit() -> Result<(), Box<dyn std::error::Error>> {
     let refs = Refs::new(&git_path);
 
     let entries: Vec<Entry> = ws
-        .list_files()?
-        .map(|dir_entry| {
-            let path = dir_entry.unwrap().path();
+        .list_files()
+        .map(|dir_entry: walkdir::DirEntry| {
+            let path = dir_entry.path().to_owned();
             let data = String::from_utf8(Workspace::read_file(&path).unwrap()).unwrap();
             let mut blob = Blob::new(&data);
             db.store(&mut blob).unwrap();
